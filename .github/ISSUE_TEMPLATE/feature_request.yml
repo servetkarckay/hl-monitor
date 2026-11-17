@@ -1,0 +1,36 @@
+name: Feature request
+description: Suggest a new capability or improvement
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ideas welcome. Please describe the problem you're trying to solve,
+        not just the feature you want.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: The "why" matters more than the "what".
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Sketch of what you'd like to see.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches you thought about.
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: This keeps the tool read-only (no order placement)
+          required: true
+        - label: This keeps the single-panel layout
+          required: true

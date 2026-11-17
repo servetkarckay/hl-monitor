@@ -1,0 +1,49 @@
+name: Bug report
+description: Something isn't working as expected
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please fill in what you can — even partial info
+        helps a lot.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `git rev-parse --short HEAD` or the release tag
+      placeholder: e.g. v0.1.0 / 7af01c1
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you see, and what did you expect to see?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps, commands, and (if possible) the .env values
+        you used — never paste a real private key.
+      placeholder: |
+        1. cargo run --release -- ...
+        2. ...
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / output
+      description: Paste relevant terminal output. Redact any secrets.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and couldn't find a duplicate
+          required: true
+        - label: I am NOT including a real private key or secret in this report
+          required: true

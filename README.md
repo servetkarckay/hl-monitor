@@ -1,6 +1,21 @@
 # Hyperliquid Terminal
 
 <p align="center">
+  <a href="https://github.com/servetkarckay/hl-monitor/actions/workflows/ci.yml">
+    <img src="https://github.com/servetkarckay/hl-monitor/actions/workflows/ci.yml/badge.svg" alt="CI"/>
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"/>
+  </a>
+  <a href="https://github.com/servetkarckay/hl-monitor/releases/latest">
+    <img src="https://img.shields.io/github/v/release/servetkarckay/hl-monitor" alt="Release"/>
+  </a>
+  <a href="https://www.rust-lang.org">
+    <img src="https://img.shields.io/badge/rust-1.75%2B-orange.svg" alt="Rust 1.75+"/>
+  </a>
+</p>
+
+<p align="center">
   <img src="img/hyperliquid.png" alt="Hyperliquid Terminal screenshot" width="900"/>
 </p>
 

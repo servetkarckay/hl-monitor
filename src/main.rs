@@ -5,7 +5,13 @@ fn parse_args() -> hl_monitor::Args {
     let mut args = hl_monitor::Args {
         once: false,
         interval: 10,
-        coins: vec!["HYPE".into(), "BTC".into(), "SOL".into(), "JUP".into(), "PURR".into()],
+        coins: vec![
+            "HYPE".into(),
+            "BTC".into(),
+            "SOL".into(),
+            "JUP".into(),
+            "PURR".into(),
+        ],
         fills_limit: 500,
         funding_days: 90,
     };
@@ -47,7 +53,9 @@ fn parse_args() -> hl_monitor::Args {
 }
 
 fn ensure_beeps() {
-    if std::path::Path::new("/tmp/opencode/beep_open.wav").exists() { return; }
+    if std::path::Path::new("/tmp/opencode/beep_open.wav").exists() {
+        return;
+    }
     let _ = std::fs::create_dir_all("/tmp/opencode");
     let script = r#"
 import wave, struct, math
@@ -59,7 +67,10 @@ def make(path, freq, dur=0.3, rate=22050):
 make('/tmp/opencode/beep_open.wav', 880)
 make('/tmp/opencode/beep_close.wav', 440)
 "#;
-    let _ = std::process::Command::new("python3").arg("-c").arg(script).status();
+    let _ = std::process::Command::new("python3")
+        .arg("-c")
+        .arg(script)
+        .status();
 }
 
 #[tokio::main]

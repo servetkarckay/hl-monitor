@@ -8,13 +8,23 @@ use crate::ui;
 use crossterm::cursor::Show as ShowCursor;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use crossterm::execute;
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen};
+use crossterm::terminal::{
+    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+};
 use ratatui::backend::CrosstermBackend;
 use ratatui::Terminal;
 use tokio::sync::mpsc;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Tab { Overview, Positions, Orders, Fills, Funding, Portfolio, Tape }
+pub enum Tab {
+    Overview,
+    Positions,
+    Orders,
+    Fills,
+    Funding,
+    Portfolio,
+    Tape,
+}
 
 impl Tab {
     pub fn name(&self) -> &'static str {
@@ -30,30 +40,55 @@ impl Tab {
     }
     pub fn next(self) -> Self {
         match self {
-            Tab::Overview => Tab::Positions, Tab::Positions => Tab::Orders, Tab::Orders => Tab::Fills,
-            Tab::Fills => Tab::Funding, Tab::Funding => Tab::Portfolio, Tab::Portfolio => Tab::Tape,
+            Tab::Overview => Tab::Positions,
+            Tab::Positions => Tab::Orders,
+            Tab::Orders => Tab::Fills,
+            Tab::Fills => Tab::Funding,
+            Tab::Funding => Tab::Portfolio,
+            Tab::Portfolio => Tab::Tape,
             Tab::Tape => Tab::Overview,
         }
     }
     pub fn prev(self) -> Self {
         match self {
-            Tab::Overview => Tab::Tape, Tab::Positions => Tab::Overview, Tab::Orders => Tab::Positions,
-            Tab::Fills => Tab::Orders, Tab::Funding => Tab::Fills, Tab::Portfolio => Tab::Funding,
+            Tab::Overview => Tab::Tape,
+            Tab::Positions => Tab::Overview,
+            Tab::Orders => Tab::Positions,
+            Tab::Fills => Tab::Orders,
+            Tab::Funding => Tab::Fills,
+            Tab::Portfolio => Tab::Funding,
             Tab::Tape => Tab::Portfolio,
         }
     }
     pub fn from_digit(n: usize) -> Option<Self> {
-        match n { 1=>Some(Tab::Overview),2=>Some(Tab::Positions),3=>Some(Tab::Orders),4=>Some(Tab::Fills),5=>Some(Tab::Funding),6=>Some(Tab::Portfolio),7=>Some(Tab::Tape),_=>None }
+        match n {
+            1 => Some(Tab::Overview),
+            2 => Some(Tab::Positions),
+            3 => Some(Tab::Orders),
+            4 => Some(Tab::Fills),
+            5 => Some(Tab::Funding),
+            6 => Some(Tab::Portfolio),
+            7 => Some(Tab::Tape),
+            _ => None,
+        }
     }
 }
 
 impl std::fmt::Display for Tab {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { f.write_str(self.name()) }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.name())
+    }
 }
 
 #[derive(Debug, Clone)]
 pub enum TapeEvent {
-    Trade { time: i64, coin: String, side: String, px: f64, sz: f64 },
+    Trade {
+        time: i64,
+        coin: String,
+        side: String,
+        px: f64,
+        sz: f64,
+    },
     UserEvent(serde_json::Value),
     Connected,
     Disconnected,
@@ -102,33 +137,85 @@ pub struct AppState {
 impl AppState {
     pub fn new(user: String, interval: Duration, coins: Vec<String>) -> Self {
         Self {
-            user, tab: Tab::Overview, paused: false, last_refresh: None, refresh_interval: interval,
-            error: None, overview: None, positions: Vec::new(), spot: Vec::new(), orders: Vec::new(),
-            fills: Vec::new(), funding: Vec::new(), fees: None, portfolio: None, mids: HashMap::new(),
-            ctx: HashMap::new(), tape: VecDeque::new(), scroll: 0, filter_coin: None, input_mode: false,
-            filter_buffer: String::new(), show_help: false, selected: 0, coins, equity_history: VecDeque::new(), oi_history: VecDeque::new(), prev_positions: Vec::new(), has_baseline: false,
-            connection_ok: true, connection_msg: None, latency_ms: 0.0, ob: None, rate_limit: (0, 0), fills_truncated: false, funding_truncated: false, spot_px: HashMap::new(),
+            user,
+            tab: Tab::Overview,
+            paused: false,
+            last_refresh: None,
+            refresh_interval: interval,
+            error: None,
+            overview: None,
+            positions: Vec::new(),
+            spot: Vec::new(),
+            orders: Vec::new(),
+            fills: Vec::new(),
+            funding: Vec::new(),
+            fees: None,
+            portfolio: None,
+            mids: HashMap::new(),
+            ctx: HashMap::new(),
+            tape: VecDeque::new(),
+            scroll: 0,
+            filter_coin: None,
+            input_mode: false,
+            filter_buffer: String::new(),
+            show_help: false,
+            selected: 0,
+            coins,
+            equity_history: VecDeque::new(),
+            oi_history: VecDeque::new(),
+            prev_positions: Vec::new(),
+            has_baseline: false,
+            connection_ok: true,
+            connection_msg: None,
+            latency_ms: 0.0,
+            ob: None,
+            rate_limit: (0, 0),
+            fills_truncated: false,
+            funding_truncated: false,
+            spot_px: HashMap::new(),
         }
     }
-    pub fn next_tab(&mut self) { self.tab = self.tab.next(); }
-    pub fn prev_tab(&mut self) { self.tab = self.tab.prev(); }
+    pub fn next_tab(&mut self) {
+        self.tab = self.tab.next();
+    }
+    pub fn prev_tab(&mut self) {
+        self.tab = self.tab.prev();
+    }
 }
 
 pub async fn run_tui(args: crate::Args) -> anyhow::Result<()> {
     let cfg = hyperliquid_api::Config::from_env()?;
-    let user = std::env::var("USER_ADDRESS").map_err(|_| anyhow::anyhow!("USER_ADDRESS not set"))?;
-    let mut state = AppState::new(user.clone(), Duration::from_secs(args.interval), args.coins.clone());
-    if args.coins.len() == 1 { state.filter_coin = Some(args.coins[0].clone()); }
+    let user =
+        std::env::var("USER_ADDRESS").map_err(|_| anyhow::anyhow!("USER_ADDRESS not set"))?;
+    let mut state = AppState::new(
+        user.clone(),
+        Duration::from_secs(args.interval),
+        args.coins.clone(),
+    );
+    if args.coins.len() == 1 {
+        state.filter_coin = Some(args.coins[0].clone());
+    }
 
     let (data_tx, mut data_rx) = mpsc::channel::<crate::data::DataMsg>(4);
     let (tape_tx, mut tape_rx) = mpsc::channel::<crate::data::TapeMsg>(256);
     let tape_cfg = cfg.clone();
     let tape_coins = args.coins.clone();
-    let poll_handle = tokio::spawn(crate::data::poll_loop(cfg, user.clone(), Duration::from_secs(args.interval), args.funding_days, args.coins.clone(), data_tx));
+    let poll_handle = tokio::spawn(crate::data::poll_loop(
+        cfg,
+        user.clone(),
+        Duration::from_secs(args.interval),
+        args.funding_days,
+        args.coins.clone(),
+        data_tx,
+    ));
     let tape_handle = tokio::spawn(crate::data::tape_loop(tape_cfg, tape_coins, tape_tx));
 
     let original_hook = std::panic::take_hook();
-    std::panic::set_hook(Box::new(move |info| { let _ = disable_raw_mode(); let _ = execute!(io::stdout(), LeaveAlternateScreen, ShowCursor); original_hook(info); }));
+    std::panic::set_hook(Box::new(move |info| {
+        let _ = disable_raw_mode();
+        let _ = execute!(io::stdout(), LeaveAlternateScreen, ShowCursor);
+        original_hook(info);
+    }));
 
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -140,15 +227,25 @@ pub async fn run_tui(args: crate::Args) -> anyhow::Result<()> {
     let input_handle = tokio::spawn(async move {
         loop {
             match event::poll(Duration::from_millis(50)) {
-                Ok(true) => { if let Ok(ev) = event::read() { if tx.send(ev).await.is_err() { break; } } }
-                Ok(false) => { tokio::task::yield_now().await; }
+                Ok(true) => {
+                    if let Ok(ev) = event::read() {
+                        if tx.send(ev).await.is_err() {
+                            break;
+                        }
+                    }
+                }
+                Ok(false) => {
+                    tokio::task::yield_now().await;
+                }
                 Err(_) => break,
             }
         }
     });
 
     let result = event_loop(&mut terminal, state, rx, &mut data_rx, &mut tape_rx).await;
-    input_handle.abort(); poll_handle.abort(); tape_handle.abort();
+    input_handle.abort();
+    poll_handle.abort();
+    tape_handle.abort();
     let _ = disable_raw_mode();
     let _ = execute!(terminal.backend_mut(), LeaveAlternateScreen, ShowCursor);
     let _ = terminal.show_cursor();
@@ -160,11 +257,14 @@ pub async fn run_tui(args: crate::Args) -> anyhow::Result<()> {
 /// 24s hacmi en yüksek coin (ad leksikografik tiebreak — deterministik).
 fn select_oi_coin(coins: &[String], ctx: &HashMap<String, data::CtxLite>) -> Option<String> {
     if let Some(c) = coins.first() {
-        if ctx.contains_key(c) { return Some(c.clone()); }
+        if ctx.contains_key(c) {
+            return Some(c.clone());
+        }
     }
     ctx.iter()
         .max_by(|a, b| {
-            a.1.day_ntl_vlm.partial_cmp(&b.1.day_ntl_vlm)
+            a.1.day_ntl_vlm
+                .partial_cmp(&b.1.day_ntl_vlm)
                 .unwrap_or(std::cmp::Ordering::Equal)
                 .then_with(|| b.0.cmp(a.0))
         })
@@ -177,12 +277,18 @@ fn select_oi_coin(coins: &[String], ctx: &HashMap<String, data::CtxLite>) -> Opt
 fn position_events(old: &[data::Position], new: &[data::Position]) -> Vec<(bool, data::Position)> {
     let mut ev = Vec::new();
     for np in new {
-        if !old.iter().any(|op| op.coin == np.coin && op.side == np.side) {
+        if !old
+            .iter()
+            .any(|op| op.coin == np.coin && op.side == np.side)
+        {
             ev.push((true, np.clone()));
         }
     }
     for op in old {
-        if !new.iter().any(|np| np.coin == op.coin && np.side == op.side) {
+        if !new
+            .iter()
+            .any(|np| np.coin == op.coin && np.side == op.side)
+        {
             ev.push((false, op.clone()));
         }
     }
@@ -192,22 +298,64 @@ fn position_events(old: &[data::Position], new: &[data::Position]) -> Vec<(bool,
 fn detect_position_changes(old: &[data::Position], new: &[data::Position]) {
     for (opened, p) in position_events(old, new) {
         let (sound, title, msg) = if opened {
-            ("/tmp/opencode/beep_open.wav", "Position opened", format!("{} {} {:.4} @ {:.4}", p.coin, p.side, p.size, p.entry_px))
+            (
+                "/tmp/opencode/beep_open.wav",
+                "Position opened",
+                format!("{} {} {:.4} @ {:.4}", p.coin, p.side, p.size, p.entry_px),
+            )
         } else {
-            ("/tmp/opencode/beep_close.wav", "Position closed", format!("{} {} closed", p.coin, p.side))
+            (
+                "/tmp/opencode/beep_close.wav",
+                "Position closed",
+                format!("{} {} closed", p.coin, p.side),
+            )
         };
-        let _ = std::process::Command::new("pw-play").arg("--target").arg("alsa_output.pci-0000_00_1b.0.analog-stereo").arg(sound).spawn();
-        let _ = std::process::Command::new("notify-send").arg("-u").arg("critical").arg(title).arg(msg).spawn();
+        let _ = std::process::Command::new("pw-play")
+            .arg("--target")
+            .arg("alsa_output.pci-0000_00_1b.0.analog-stereo")
+            .arg(sound)
+            .spawn();
+        let _ = std::process::Command::new("notify-send")
+            .arg("-u")
+            .arg("critical")
+            .arg(title)
+            .arg(msg)
+            .spawn();
     }
 }
 
-async fn event_loop(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, mut state: AppState, mut rx: mpsc::Receiver<Event>, data_rx: &mut mpsc::Receiver<crate::data::DataMsg>, tape_rx: &mut mpsc::Receiver<crate::data::TapeMsg>) -> anyhow::Result<()> {
+async fn event_loop(
+    terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
+    mut state: AppState,
+    mut rx: mpsc::Receiver<Event>,
+    data_rx: &mut mpsc::Receiver<crate::data::DataMsg>,
+    tape_rx: &mut mpsc::Receiver<crate::data::TapeMsg>,
+) -> anyhow::Result<()> {
     let mut tick = tokio::time::interval(Duration::from_millis(16));
     loop {
         while let Ok(msg) = data_rx.try_recv() {
             match msg {
-                crate::data::DataMsg::Snapshot { overview, positions, spot, orders, fills, funding, fees, portfolio, mids, ctx, latency_ms, ob, rate_limit, fills_truncated, funding_truncated, spot_px } => {
-                    state.error = None; state.connection_ok = true; state.connection_msg = None;
+                crate::data::DataMsg::Snapshot {
+                    overview,
+                    positions,
+                    spot,
+                    orders,
+                    fills,
+                    funding,
+                    fees,
+                    portfolio,
+                    mids,
+                    ctx,
+                    latency_ms,
+                    ob,
+                    rate_limit,
+                    fills_truncated,
+                    funding_truncated,
+                    spot_px,
+                } => {
+                    state.error = None;
+                    state.connection_ok = true;
+                    state.connection_msg = None;
                     if !state.paused {
                         // Detect position open/close for alerts (skip first snapshot = baseline)
                         if state.has_baseline {
@@ -217,16 +365,42 @@ async fn event_loop(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, mut s
                         }
                         state.prev_positions = positions.clone();
                         state.overview = Some(overview.clone());
-                        state.positions = positions; state.spot = spot; state.orders = orders; state.fills = fills;
-                        state.funding = funding; state.fees = Some(fees); state.portfolio = Some(portfolio);
-                        state.mids = mids; state.ctx = ctx; state.latency_ms = latency_ms; state.ob = ob; state.rate_limit = rate_limit; state.fills_truncated = fills_truncated; state.funding_truncated = funding_truncated; state.spot_px = spot_px;
-                        let spot_usd: f64 = state.spot.iter().map(|(coin, total, _)| {
-                            if coin == "USDC" { *total }
-                            else { state.spot_px.get(coin).copied().unwrap_or(0.0) * *total }
-                        }).sum();
-                        let eq = state.overview.as_ref().map(|o| o.account_value).unwrap_or(0.0) + spot_usd;
+                        state.positions = positions;
+                        state.spot = spot;
+                        state.orders = orders;
+                        state.fills = fills;
+                        state.funding = funding;
+                        state.fees = Some(fees);
+                        state.portfolio = Some(portfolio);
+                        state.mids = mids;
+                        state.ctx = ctx;
+                        state.latency_ms = latency_ms;
+                        state.ob = ob;
+                        state.rate_limit = rate_limit;
+                        state.fills_truncated = fills_truncated;
+                        state.funding_truncated = funding_truncated;
+                        state.spot_px = spot_px;
+                        let spot_usd: f64 = state
+                            .spot
+                            .iter()
+                            .map(|(coin, total, _)| {
+                                if coin == "USDC" {
+                                    *total
+                                } else {
+                                    state.spot_px.get(coin).copied().unwrap_or(0.0) * *total
+                                }
+                            })
+                            .sum();
+                        let eq = state
+                            .overview
+                            .as_ref()
+                            .map(|o| o.account_value)
+                            .unwrap_or(0.0)
+                            + spot_usd;
                         state.equity_history.push_back(eq);
-                        while state.equity_history.len() > 200 { state.equity_history.pop_front(); }
+                        while state.equity_history.len() > 200 {
+                            state.equity_history.pop_front();
+                        }
                         // OI: SABIT piyasa — user'ın seçtiği birincil coin
                         // (--coins ilk elemanı); seçim yoksa day hacmi en
                         // yüksek coin (ad leksikografik tiebreak).
@@ -239,22 +413,42 @@ async fn event_loop(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, mut s
                             .map(|d| d.as_millis() as i64)
                             .unwrap_or(0);
                         state.oi_history.push_back((now_ms, oi));
-                        while state.oi_history.len() > 43200 { state.oi_history.pop_front(); }
+                        while state.oi_history.len() > 43200 {
+                            state.oi_history.pop_front();
+                        }
                     }
                     state.last_refresh = Some(Instant::now());
                 }
-                crate::data::DataMsg::Error(e) => { state.error = Some(e.clone()); state.connection_ok = false; state.connection_msg = Some(e); }
+                crate::data::DataMsg::Error(e) => {
+                    state.error = Some(e.clone());
+                    state.connection_ok = false;
+                    state.connection_msg = Some(e);
+                }
             }
         }
         while let Ok(msg) = tape_rx.try_recv() {
             let ev = match msg {
-                crate::data::TapeMsg::Trade { time, coin, side, px, sz } => TapeEvent::Trade { time, coin, side, px, sz },
+                crate::data::TapeMsg::Trade {
+                    time,
+                    coin,
+                    side,
+                    px,
+                    sz,
+                } => TapeEvent::Trade {
+                    time,
+                    coin,
+                    side,
+                    px,
+                    sz,
+                },
                 crate::data::TapeMsg::UserEvent(v) => TapeEvent::UserEvent(v),
                 crate::data::TapeMsg::Connected => TapeEvent::Connected,
                 crate::data::TapeMsg::Disconnected => TapeEvent::Disconnected,
             };
             state.tape.push_back(ev);
-            while state.tape.len() > 500 { state.tape.pop_front(); }
+            while state.tape.len() > 500 {
+                state.tape.pop_front();
+            }
         }
         terminal.draw(|f| ui::draw(f, &state))?;
         tokio::select! {
@@ -316,14 +510,27 @@ mod tests {
     fn tabs_cycle_forward_and_wrap() {
         let mut s = AppState::new("u".into(), Duration::from_secs(10), vec![]);
         assert_eq!(s.tab, Tab::Overview);
-        let order = [Tab::Positions, Tab::Orders, Tab::Fills, Tab::Funding, Tab::Portfolio, Tab::Tape, Tab::Overview];
-        for t in order { s.next_tab(); assert_eq!(s.tab, t); }
+        let order = [
+            Tab::Positions,
+            Tab::Orders,
+            Tab::Fills,
+            Tab::Funding,
+            Tab::Portfolio,
+            Tab::Tape,
+            Tab::Overview,
+        ];
+        for t in order {
+            s.next_tab();
+            assert_eq!(s.tab, t);
+        }
     }
     #[test]
     fn tabs_cycle_backward_and_wrap() {
         let mut s = AppState::new("u".into(), Duration::from_secs(10), vec![]);
-        s.prev_tab(); assert_eq!(s.tab, Tab::Tape);
-        s.prev_tab(); assert_eq!(s.tab, Tab::Portfolio);
+        s.prev_tab();
+        assert_eq!(s.tab, Tab::Tape);
+        s.prev_tab();
+        assert_eq!(s.tab, Tab::Portfolio);
     }
     #[test]
     fn empty_state() {
@@ -367,9 +574,15 @@ mod tests {
 
     fn pos(coin: &str, side: &str, size: f64) -> data::Position {
         data::Position {
-            coin: coin.into(), side: side.into(), size,
-            entry_px: 1.0, mark_px: None, unrealized_pnl: 0.0,
-            liq_px: None, leverage: 1.0, notional: size,
+            coin: coin.into(),
+            side: side.into(),
+            size,
+            entry_px: 1.0,
+            mark_px: None,
+            unrealized_pnl: 0.0,
+            liq_px: None,
+            leverage: 1.0,
+            notional: size,
         }
     }
 
@@ -411,9 +624,36 @@ mod tests {
     #[test]
     fn select_oi_coin_sabit_piyasa() {
         let mut ctx: HashMap<String, data::CtxLite> = HashMap::new();
-        ctx.insert("BTC".into(), data::CtxLite { funding: 0.0, open_interest: 1.0, mark_px: 0.0, oracle_px: 0.0, day_ntl_vlm: 100.0 });
-        ctx.insert("HYPE".into(), data::CtxLite { funding: 0.0, open_interest: 2.0, mark_px: 0.0, oracle_px: 0.0, day_ntl_vlm: 500.0 });
-        ctx.insert("ETH".into(), data::CtxLite { funding: 0.0, open_interest: 3.0, mark_px: 0.0, oracle_px: 0.0, day_ntl_vlm: 500.0 });
+        ctx.insert(
+            "BTC".into(),
+            data::CtxLite {
+                funding: 0.0,
+                open_interest: 1.0,
+                mark_px: 0.0,
+                oracle_px: 0.0,
+                day_ntl_vlm: 100.0,
+            },
+        );
+        ctx.insert(
+            "HYPE".into(),
+            data::CtxLite {
+                funding: 0.0,
+                open_interest: 2.0,
+                mark_px: 0.0,
+                oracle_px: 0.0,
+                day_ntl_vlm: 500.0,
+            },
+        );
+        ctx.insert(
+            "ETH".into(),
+            data::CtxLite {
+                funding: 0.0,
+                open_interest: 3.0,
+                mark_px: 0.0,
+                oracle_px: 0.0,
+                day_ntl_vlm: 500.0,
+            },
+        );
         // Kullanıcı HYPE seçtiyse HYPE (hacimden bağımsız).
         assert_eq!(select_oi_coin(&["HYPE".into()], &ctx), Some("HYPE".into()));
         // Seçim yoksa: en yüksek hacim; eşitlikte ad leksikografik küçük.

@@ -318,17 +318,13 @@ impl HyperliquidClient {
                 Err(ApiError::Http { status: 200, body }) => {
                     // HATA 2: HTTP 200 döndü AMA gövde okunamadı -> emir
                     // borsada İŞLENMİŞ olabilir, sonucu bilinmiyor -> UNKNOWN.
-                    tracing::error!(
-                        "[EXCHANGE] HTTP 200 gövde okunamadı ({body}) -- UNKNOWN"
-                    );
+                    tracing::error!("[EXCHANGE] HTTP 200 gövde okunamadı ({body}) -- UNKNOWN");
                     return ExchangeOutcome::Unknown;
                 }
                 Err(ApiError::Json(e)) => {
                     // HATA 3: HTTP 200 döndü AMA gövde JSON değil -> emir
                     // muhtemelen işlendi, sonucu bilinmiyor -> UNKNOWN.
-                    tracing::error!(
-                        "[EXCHANGE] HTTP 200 parse hatası ({e}) -- UNKNOWN"
-                    );
+                    tracing::error!("[EXCHANGE] HTTP 200 parse hatası ({e}) -- UNKNOWN");
                     return ExchangeOutcome::Unknown;
                 }
                 Err(e) => return ExchangeOutcome::Error(e),
@@ -573,16 +569,23 @@ mod exchange_unknown_tests {
         let h2 = hits.clone();
         tokio::spawn(async move {
             loop {
-                let Ok((mut sock, _)) = listener.accept().await else { break; };
+                let Ok((mut sock, _)) = listener.accept().await else {
+                    break;
+                };
                 let mut buf = vec![0u8; 8192];
                 let n = sock.read(&mut buf).await.unwrap_or(0);
                 h2.fetch_add(1, Ordering::SeqCst);
-                if n == 0 { continue; }
+                if n == 0 {
+                    continue;
+                }
                 let _ = sock.write_all(raw.as_bytes()).await;
                 let _ = sock.flush().await;
             }
         });
-        Fake { url: format!("http://{addr}"), hits }
+        Fake {
+            url: format!("http://{addr}"),
+            hits,
+        }
     }
 
     /// HTTP 200 ama gövde OKUNAMADI (content-length yalanı + erken kapanma):

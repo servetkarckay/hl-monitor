@@ -527,14 +527,26 @@ mod precision_tests {
         assert_eq!(round_px_wire(0.07370625), perp_price(0.07370625, 0));
         let src = include_str!("exchange_endpoint.rs");
         // modify
-        assert!(src.contains("perp_price(limit_px, sz_decimals)"), "modify szDecimals-uyumlu");
+        assert!(
+            src.contains("perp_price(limit_px, sz_decimals)"),
+            "modify szDecimals-uyumlu"
+        );
         // batch
-        assert!(src.contains("perp_price(o.px, o.sz_decimals)"), "batch szDecimals-uyumlu");
+        assert!(
+            src.contains("perp_price(o.px, o.sz_decimals)"),
+            "batch szDecimals-uyumlu"
+        );
         // trigger
-        assert!(src.contains("perp_price(trigger_px, sz_decimals)"), "trigger szDecimals-uyumlu");
+        assert!(
+            src.contains("perp_price(trigger_px, sz_decimals)"),
+            "trigger szDecimals-uyumlu"
+        );
         let mod_body = src.split("pub async fn modify").nth(1).unwrap_or("");
         let head = mod_body.split("pub async fn").next().unwrap_or(mod_body);
-        assert!(!head.contains("round_5sig"), "modify'da ad-hoc 5sig kalmadı");
+        assert!(
+            !head.contains("round_5sig"),
+            "modify'da ad-hoc 5sig kalmadı"
+        );
     }
 
     /// verified (keşif) birleşimi: keşif sıkıysa keşif; yoksa/gevşekse kural.
