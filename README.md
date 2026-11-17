@@ -126,6 +126,11 @@ balances are never silently valued at zero or against a same-name perp.
 
 ---
 
+## License
+
+This project is released under the [MIT License](LICENSE) — free to use,
+modify, distribute and even sell, as long as the copyright notice stays.
+
 ## Disclaimer
 
 This project is for personal account monitoring. It is not financial advice,
