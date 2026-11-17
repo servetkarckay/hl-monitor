@@ -837,7 +837,7 @@ dependencies = [
  "rmp-serde",
  "serde",
  "serde_json",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
  "tiny-keccak",
  "tokio",
  "tokio-tungstenite",
