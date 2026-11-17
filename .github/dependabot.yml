@@ -5,8 +5,33 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    # Breaking major bumps for the crypto/signing stack are handled manually
+    # (they require code changes and offline validation). Patch/minor updates
+    # within the current major series still flow automatically.
+    ignore:
+      - dependency-name: "k256"
+        versions: [">=0.14.0"]
+      - dependency-name: "thiserror"
+        versions: [">=2.0.0"]
+      - dependency-name: "tokio-tungstenite"
+        versions: [">=0.25.0"]
+      - dependency-name: "ecdsa"
+        versions: [">=0.17.0"]
+      - dependency-name: "elliptic-curve"
+        versions: [">=0.14.0"]
   - package-ecosystem: cargo
     directory: /api
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "k256"
+        versions: [">=0.14.0"]
+      - dependency-name: "thiserror"
+        versions: [">=2.0.0"]
+      - dependency-name: "tokio-tungstenite"
+        versions: [">=0.25.0"]
+      - dependency-name: "ecdsa"
+        versions: [">=0.17.0"]
+      - dependency-name: "elliptic-curve"
+        versions: [">=0.14.0"]
