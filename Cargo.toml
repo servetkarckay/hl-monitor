@@ -12,7 +12,7 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "rus
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 rmp-serde = "1"
-tokio-tungstenite = { version = "0.24", default-features = false, features = ["rustls-tls-webpki-roots", "connect"] }
+tokio-tungstenite = { version = "0.30", default-features = false, features = ["rustls-tls-webpki-roots", "connect"] }
 futures-util = "0.3"
 k256 = { version = "0.13", features = ["ecdsa", "sha256"] }
 tiny-keccak = { version = "2", features = ["keccak"] }
